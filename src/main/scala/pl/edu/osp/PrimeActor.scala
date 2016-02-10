@@ -18,6 +18,10 @@ class PrimeActor(id:Int, max:Int) extends Actor  {
         sender ! (n, id)
       }
     }
+    case Stop => {
+      finished = true
+      sender ! Counted(primeBank.getSize, id)
+    }
   }
 
 }

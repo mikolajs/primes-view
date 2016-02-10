@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
 import akka.pattern.ask
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 import scalafx.Includes._
@@ -22,16 +22,7 @@ import scalafx.scene.text.Text
 
 
 object Boot extends JFXApp {
-  val system = ActorSystem("MySystem")
-  val supervisor = system.actorOf(Props[PrimeMainActor], name = "primeMActor")
 
-
-  implicit val timeout = Timeout(2.second)
-  implicit val ec = system.dispatcher
-  val f: Future[Any] = supervisor ? "start"
-  f.onSuccess {
-    case l:List[Int] => println(s"Will pay $l cents for a cappuccino")
-  }
 
   val buttonCount = new Button {
     text = "Licz!"
@@ -85,6 +76,18 @@ object Boot extends JFXApp {
     }
   }
   def countPrimes():Unit = {
+
+    val system = ActorSystem("MySystem")
+    val many = 10000
+    val mainActor = system.actorOf(Props(classOf[PrimeMainActor], many ), name = "primeMActor")
+    var j = 3
+    val max = many*15
+    while (j < max){
+      mainActor ! j
+      j += 2
+    }
+    mainActor ! 999983
+    Await.result(system.whenTerminated, 5 minutes)
     println("===================== Button clicked!!!!")
     gc.fill = Color.RED
     gc.fillRect(0, canvas.height.get - 250, 50, 250)
