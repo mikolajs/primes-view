@@ -1,6 +1,7 @@
 package pl.edu.osp
 
-import akka.actor.{Actor, ActorSystem, Props}
+
+import akka.actor.{ ActorSystem, Props}
 import akka.util.Timeout
 import akka.pattern.ask
 
@@ -11,7 +12,8 @@ import scalafx.Includes._
 import scalafx.geometry.Insets
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.control.{Separator, Button}
-import scalafx.scene.layout.{FlowPane, VBox, HBox}
+import scalafx.scene.control.Spinner
+import scalafx.scene.layout.{FlowPane, VBox}
 import scalafx.scene.paint.Color
 import scalafx.scene.paint.{Stops, LinearGradient}
 import scalafx.application.JFXApp
@@ -22,7 +24,6 @@ import scalafx.scene.text.Text
 
 
 object Boot extends JFXApp {
-
 
   val buttonCount = new Button {
     text = "Licz!"
@@ -61,7 +62,15 @@ object Boot extends JFXApp {
                     stops = Stops(SEAGREEN, DARKGREEN))
                 },
                 new Separator {
-                  minWidth = 100
+                  minWidth = 50
+                },
+                new Spinner[Int](1000, 50000, 1000, 1000) {
+                  styleClass += Spinner.StyleClassArrowsOnRightHorizontal
+                  minWidth = 200
+                  prefHeight = 30
+                },
+                new Separator {
+                  minWidth = 50
                 },
                 buttonCount)
               minHeight = 100
@@ -78,7 +87,7 @@ object Boot extends JFXApp {
   def countPrimes():Unit = {
 
     val system = ActorSystem("MySystem")
-    val many = 10000
+    val many = 20000
     val mainActor = system.actorOf(Props(classOf[PrimeMainActor], many ), name = "primeMActor")
     var j = 3
     val max = many*15
@@ -87,11 +96,20 @@ object Boot extends JFXApp {
       j += 2
     }
     mainActor ! 999983
-    Await.result(system.whenTerminated, 5 minutes)
-    println("===================== Button clicked!!!!")
-    gc.fill = Color.RED
-    gc.fillRect(0, canvas.height.get - 250, 50, 250)
-    gc.fillPath()
+    implicit val timeout = Timeout(20 seconds)
+    val future: Future[Array[Int]] = ask(mainActor, Result).mapTo[Array[Int]]
+    val result = Await.result(future, 10 second)
+    println("Boot receive data: " + result.mkString(", "))
+    val colors = Array(Color.RED, Color.BLUE, Color.SILVER, Color.FUCHSIA, Color.GREEN,
+    Color.ROYALBLUE, Color.CHOCOLATE, Color.CYAN, Color.WHEAT, Color.AQUA,
+    Color.BLUEVIOLET, Color.YELLOW, Color.BROWN, Color.HOTPINK, Color.AZURE)
+    var i = 0
+    for(r <- result) {
+      gc.fill = colors(i)
+      gc.fillRect(i*50, canvas.height.get - 250, 50, 250)
+      gc.fillPath()
+      i += 1
+    }
   }
 }
 
